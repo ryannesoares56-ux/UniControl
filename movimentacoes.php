@@ -48,16 +48,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $delta = in_array($tipo, ['entrada', 'devolucao']) ? $quantidade : -$quantidade;
                     
                     // Atualiza a tabela estoque (RF07)
-                    $stmtUpdate = $pdo->prepare('
-                        INSERT INTO estoque (variacao_id, quantidade) 
-                        VALUES (:variacao_id, :delta)
-                        ON DUPLICATE KEY UPDATE quantidade = quantidade + :delta_up
-                    ');
-                    $stmtUpdate->execute([
-                        ':variacao_id' => $variacaoId,
-                        ':delta'       => max(0, $delta),
-                        ':delta_up'    => $delta
-                    ]);
+                    $stmtCheckEstoque = $pdo->prepare('SELECT id, quantidade FROM estoque WHERE variacao_id = :variacao_id');
+                    $stmtCheckEstoque->execute([':variacao_id' => $variacaoId]);
+                    $estoqueExistente = $stmtCheckEstoque->fetch();
+
+                    if ($estoqueExistente) {
+                        $stmtUpdate = $pdo->prepare('UPDATE estoque SET quantidade = quantidade + :delta WHERE variacao_id = :variacao_id');
+                        $stmtUpdate->execute([':delta' => $delta, ':variacao_id' => $variacaoId]);
+                    } else {
+                        $stmtInsert = $pdo->prepare('INSERT INTO estoque (variacao_id, quantidade) VALUES (:variacao_id, :quantidade)');
+                        $stmtInsert->execute([':variacao_id' => $variacaoId, ':quantidade' => max(0, $delta)]);
+                    }
 
                     // Insere registro no histórico de movimentações
                     $stmtMov = $pdo->prepare('

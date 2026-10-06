@@ -1,6 +1,7 @@
 # Dependências e caches
 .env
 *.log
+*.sqlite
 
 # IDEs
 .vscode/

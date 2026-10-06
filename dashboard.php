@@ -42,15 +42,21 @@ $stmtBaixo->execute([':empresa_id' => $empresaId]);
 $totalEstoqueBaixo = (int)$stmtBaixo->fetchColumn();
 
 // 4. Total de Entregas do Mês
+$inicioMes = date('Y-m-01 00:00:00');
+$fimMes    = date('Y-m-t 23:59:59');
 $stmtEntregas = $pdo->prepare('
     SELECT COALESCE(SUM(ent.quantidade), 0) AS total
     FROM entregas ent
     INNER JOIN funcionarios f ON ent.funcionario_id = f.id
     WHERE f.empresa_id = :empresa_id 
-      AND MONTH(ent.data_entrega) = MONTH(CURRENT_DATE())
-      AND YEAR(ent.data_entrega) = YEAR(CURRENT_DATE())
+      AND ent.data_entrega >= :inicio_mes
+      AND ent.data_entrega <= :fim_mes
 ');
-$stmtEntregas->execute([':empresa_id' => $empresaId]);
+$stmtEntregas->execute([
+    ':empresa_id'  => $empresaId,
+    ':inicio_mes'  => $inicioMes,
+    ':fim_mes'     => $fimMes
+]);
 $totalEntregasMes = (int)$stmtEntregas->fetchColumn();
 
 // Lista detalhada dos itens com estoque baixo
