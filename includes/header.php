@@ -9,8 +9,26 @@ require_once __DIR__ . '/alerts.php';
 // Garante que o usuário esteja logado
 check_auth();
 
+// Processa alternância de empresa ativa para administradores
+if (is_admin() && isset($_POST['action_switch_empresa'])) {
+    $novaEmpresa = (int)($_POST['switch_empresa_id'] ?? 0);
+    if (switch_empresa($novaEmpresa)) {
+        set_flash('info', 'Empresa ativa alterada com sucesso.');
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
+
 $user = current_user();
 $currentPage = basename($_SERVER['PHP_SELF']);
+
+// Lista empresas para o switcher do administrador
+$todasEmpresas = [];
+if (is_admin()) {
+    require_once __DIR__ . '/../config/database.php';
+    $dbHeader = getDBConnection();
+    $todasEmpresas = $dbHeader->query('SELECT id, nome FROM empresas WHERE status = "ativo" ORDER BY nome ASC')->fetchAll();
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -82,10 +100,24 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <div class="main-content">
         <!-- Topbar -->
         <header class="topbar">
-            <div>
-                <span class="company-badge">
-                    🏢 <?= htmlspecialchars($user['empresa_nome']) ?>
-                </span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <?php if (is_admin() && count($todasEmpresas) > 1): ?>
+                    <form method="POST" style="display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="hidden" name="action_switch_empresa" value="1">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Empresa Ativa:</span>
+                        <select name="switch_empresa_id" onchange="this.form.submit()" class="form-control" style="padding: 5px 12px; font-size: 0.85rem; width: auto; font-weight: 600; cursor: pointer; border-color: var(--primary);">
+                            <?php foreach ($todasEmpresas as $empOption): ?>
+                                <option value="<?= $empOption['id'] ?>" <?= $empOption['id'] == $user['empresa_id'] ? 'selected' : '' ?>>
+                                    🏢 <?= htmlspecialchars($empOption['nome']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                <?php else: ?>
+                    <span class="company-badge">
+                        🏢 <?= htmlspecialchars($user['empresa_nome']) ?>
+                    </span>
+                <?php endif; ?>
             </div>
             <div>
                 <span style="font-size:0.88rem; color:var(--text-muted);">

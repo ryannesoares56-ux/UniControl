@@ -13,8 +13,47 @@ require_once __DIR__ . '/includes/alerts.php';
 check_admin();
 
 $pdo = getDBConnection();
+$meuId = (int)current_user()['id'];
 
-// Cadastro de novo usuário
+// 1. Alternar Situação do Usuário (Ativo <-> Inativo)
+if (isset($_GET['alternar_id'])) {
+    $usrId = (int)$_GET['alternar_id'];
+    if ($usrId === $meuId) {
+        set_flash('error', 'Você não pode inativar sua própria conta em uso.');
+    } else {
+        $stmtStatus = $pdo->prepare('SELECT id, nome, status FROM usuarios WHERE id = :id');
+        $stmtStatus->execute([':id' => $usrId]);
+        $u = $stmtStatus->fetch();
+
+        if ($u) {
+            $novoStatus = ($u['status'] === 'ativo') ? 'inativo' : 'ativo';
+            $stmtUp = $pdo->prepare('UPDATE usuarios SET status = :status WHERE id = :id');
+            $stmtUp->execute([':status' => $novoStatus, ':id' => $usrId]);
+            set_flash('info', "Situação do usuário '{$u['nome']}' alterada para {$novoStatus}.");
+        }
+    }
+    header('Location: usuarios.php');
+    exit;
+}
+
+// 2. Redefinir Senha do Usuário para '123456'
+if (isset($_GET['reset_id'])) {
+    $usrId = (int)$_GET['reset_id'];
+    $stmtUser = $pdo->prepare('SELECT id, nome FROM usuarios WHERE id = :id');
+    $stmtUser->execute([':id' => $usrId]);
+    $u = $stmtUser->fetch();
+
+    if ($u) {
+        $novaSenhaHash = password_hash('123456', PASSWORD_DEFAULT);
+        $stmtReset = $pdo->prepare('UPDATE usuarios SET senha = :senha WHERE id = :id');
+        $stmtReset->execute([':senha' => $novaSenhaHash, ':id' => $usrId]);
+        set_flash('success', "A senha do usuário '{$u['nome']}' foi redefinida para '123456'.");
+    }
+    header('Location: usuarios.php');
+    exit;
+}
+
+// 3. Cadastro de novo usuário
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $empresaId = (int)($_POST['empresa_id'] ?? 0);
     $nome      = trim($_POST['nome'] ?? '');
@@ -55,10 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Busca empresas para o select
+// 4. Busca empresas para o select
 $empresas = $pdo->query('SELECT id, nome FROM empresas WHERE status = "ativo" ORDER BY nome ASC')->fetchAll();
 
-// Lista usuários
+// 5. Lista usuários
 $usuarios = $pdo->query('
     SELECT u.id, u.nome, u.email, u.nivel, u.status, u.criado_em, e.nome AS empresa_nome
     FROM usuarios u
@@ -145,12 +184,20 @@ require_once __DIR__ . '/includes/header.php';
                         <th>Nível</th>
                         <th>Status</th>
                         <th>Criado em</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($usuarios as $usr): ?>
+                    <?php foreach ($usuarios as $usr): 
+                        $isEu = ($usr['id'] == $meuId);
+                    ?>
                         <tr>
-                            <td><strong><?= htmlspecialchars($usr['nome']) ?></strong></td>
+                            <td>
+                                <strong><?= htmlspecialchars($usr['nome']) ?></strong>
+                                <?php if ($isEu): ?>
+                                    <span class="badge badge-primary" style="margin-left: 6px;">Você</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?= htmlspecialchars($usr['email']) ?></td>
                             <td><?= htmlspecialchars($usr['empresa_nome']) ?></td>
                             <td>
@@ -168,6 +215,18 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </td>
                             <td><?= date('d/m/Y', strtotime($usr['criado_em'])) ?></td>
+                            <td>
+                                <div style="display: flex; gap: 6px;">
+                                    <?php if (!$isEu): ?>
+                                        <a href="usuarios.php?alternar_id=<?= $usr['id'] ?>" class="btn btn-secondary btn-sm" title="<?= $usr['status'] === 'ativo' ? 'Inativar usuário' : 'Ativar usuário' ?>" data-confirm="Deseja alterar o status deste usuário?">
+                                            <?= $usr['status'] === 'ativo' ? '🚫' : '✅' ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="usuarios.php?reset_id=<?= $usr['id'] ?>" class="btn btn-secondary btn-sm" title="Redefinir senha para '123456'" data-confirm="Redefinir a senha deste usuário para '123456'?">
+                                        🔑 Reset
+                                    </a>
+                                </div>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

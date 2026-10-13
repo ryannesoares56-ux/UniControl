@@ -14,10 +14,37 @@ check_admin();
 
 $pdo = getDBConnection();
 
-// Processamento de Cadastro / Edição
+// 1. Acessar Dados da Empresa Diretamente
+if (isset($_GET['acessar_id'])) {
+    $empId = (int)$_GET['acessar_id'];
+    if (switch_empresa($empId)) {
+        set_flash('success', "Agora você está gerenciando: {$_SESSION['empresa_nome']}");
+        header('Location: dashboard.php');
+        exit;
+    }
+}
+
+// 2. Alternar Situação da Empresa (Ativo <-> Inativo)
+if (isset($_GET['alternar_id'])) {
+    $empId = (int)$_GET['alternar_id'];
+    $stmtStatus = $pdo->prepare('SELECT id, nome, status FROM empresas WHERE id = :id');
+    $stmtStatus->execute([':id' => $empId]);
+    $emp = $stmtStatus->fetch();
+
+    if ($emp) {
+        $novoStatus = ($emp['status'] === 'ativo') ? 'inativo' : 'ativo';
+        $stmtUp = $pdo->prepare('UPDATE empresas SET status = :status WHERE id = :id');
+        $stmtUp->execute([':status' => $novoStatus, ':id' => $empId]);
+        set_flash('info', "Situação da empresa '{$emp['nome']}' alterada para {$novoStatus}.");
+    }
+    header('Location: empresas.php');
+    exit;
+}
+
+// 3. Processamento de Cadastro
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nome = trim($_POST['nome'] ?? '');
-    $cnpj = trim($_POST['cnpj'] ?? '');
+    $nome   = trim($_POST['nome'] ?? '');
+    $cnpj   = trim($_POST['cnpj'] ?? '');
     $status = in_array($_POST['status'] ?? '', ['ativo', 'inativo']) ? $_POST['status'] : 'ativo';
 
     if (empty($nome)) {
@@ -35,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Listagem de todas as empresas
+// 4. Listagem de todas as empresas
 $stmt = $pdo->query('
     SELECT e.*, 
            (SELECT COUNT(*) FROM usuarios u WHERE u.empresa_id = e.id) AS total_usuarios,
@@ -102,16 +129,24 @@ require_once __DIR__ . '/includes/header.php';
                         <th>Funcionários</th>
                         <th>Status</th>
                         <th>Cadastrada em</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($empresas)): ?>
-                        <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Nenhuma empresa cadastrada.</td></tr>
+                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Nenhuma empresa cadastrada.</td></tr>
                     <?php else: ?>
-                        <?php foreach ($empresas as $emp): ?>
-                            <tr>
+                        <?php foreach ($empresas as $emp): 
+                            $isAtual = ($emp['id'] == current_empresa_id());
+                        ?>
+                            <tr style="<?= $isAtual ? 'background: #eff6ff;' : '' ?>">
                                 <td>#<?= $emp['id'] ?></td>
-                                <td><strong><?= htmlspecialchars($emp['nome']) ?></strong></td>
+                                <td>
+                                    <strong><?= htmlspecialchars($emp['nome']) ?></strong>
+                                    <?php if ($isAtual): ?>
+                                        <span class="badge badge-primary" style="margin-left:6px;">Ativa Agora</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= htmlspecialchars($emp['cnpj'] ?? 'Não informado') ?></td>
                                 <td><span class="badge badge-secondary"><?= $emp['total_usuarios'] ?></span></td>
                                 <td><span class="badge badge-primary"><?= $emp['total_funcionarios'] ?></span></td>
@@ -123,6 +158,18 @@ require_once __DIR__ . '/includes/header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td><?= date('d/m/Y', strtotime($emp['criado_em'])) ?></td>
+                                <td>
+                                    <div style="display: flex; gap: 6px;">
+                                        <?php if (!$isAtual && $emp['status'] === 'ativo'): ?>
+                                            <a href="empresas.php?acessar_id=<?= $emp['id'] ?>" class="btn btn-primary btn-sm" title="Gerenciar estoque desta empresa">
+                                                Acessar
+                                            </a>
+                                        <?php endif; ?>
+                                        <a href="empresas.php?alternar_id=<?= $emp['id'] ?>" class="btn btn-secondary btn-sm" title="<?= $emp['status'] === 'ativo' ? 'Inativar empresa' : 'Ativar empresa' ?>" data-confirm="Deseja alterar a situação desta empresa?">
+                                            <?= $emp['status'] === 'ativo' ? '🚫' : '✅' ?>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>

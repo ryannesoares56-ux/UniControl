@@ -77,6 +77,19 @@ $stmtAlertas = $pdo->prepare('
 ');
 $stmtAlertas->execute([':empresa_id' => $empresaId]);
 $alertasEstoque = $stmtAlertas->fetchAll();
+
+// 5. Distribuição por Categoria
+$stmtCategorias = $pdo->prepare('
+    SELECT u.categoria, COALESCE(SUM(e.quantidade), 0) AS total_pecas
+    FROM uniformes u
+    INNER JOIN uniforme_variacoes uv ON u.id = uv.uniforme_id
+    LEFT JOIN estoque e ON uv.id = e.variacao_id
+    WHERE u.empresa_id = :empresa_id
+    GROUP BY u.categoria
+    ORDER BY total_pecas DESC
+');
+$stmtCategorias->execute([':empresa_id' => $empresaId]);
+$categoriasEstoque = $stmtCategorias->fetchAll();
 ?>
 
 <div class="page-header">
@@ -128,6 +141,34 @@ $alertasEstoque = $stmtAlertas->fetchAll();
         </div>
         <div class="kpi-value"><?= number_format($totalEntregasMes, 0, ',', '.') ?></div>
         <div class="kpi-subtext">Peças distribuídas este mês</div>
+    </div>
+</div>
+
+<!-- Distribuição por Categoria -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📊 Distribuição do Estoque por Categoria</h2>
+    </div>
+    <div class="card-body">
+        <?php if (empty($categoriasEstoque)): ?>
+            <p style="color: var(--text-muted); font-style: italic;">Nenhum produto cadastrado no catálogo.</p>
+        <?php else: ?>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                <?php foreach ($categoriasEstoque as $cat): 
+                    $percent = ($totalPecas > 0) ? round(($cat['total_pecas'] / $totalPecas) * 100, 1) : 0;
+                ?>
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">
+                            <span><?= htmlspecialchars($cat['categoria']) ?></span>
+                            <span><?= $cat['total_pecas'] ?> un. (<?= $percent ?>%)</span>
+                        </div>
+                        <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden;">
+                            <div style="width: <?= $percent ?>%; background: var(--primary); height: 100%;"></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

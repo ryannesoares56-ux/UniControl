@@ -223,11 +223,12 @@ $variacaoPreselecionada = (int)($_GET['variacao_id'] ?? 0);
                         <th>Qtd.</th>
                         <th>Observação</th>
                         <th>Entregue por</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($entregas)): ?>
-                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Nenhuma entrega registrada.</td></tr>
+                        <tr><td colspan="9" style="text-align:center; color:var(--text-muted);">Nenhuma entrega registrada.</td></tr>
                     <?php else: ?>
                         <?php foreach ($entregas as $e): ?>
                             <tr>
@@ -242,6 +243,11 @@ $variacaoPreselecionada = (int)($_GET['variacao_id'] ?? 0);
                                 <td><strong style="color:var(--primary); font-size:1.05rem;"><?= $e['quantidade'] ?> un.</strong></td>
                                 <td><?= htmlspecialchars($e['observacao'] ?? '-') ?></td>
                                 <td><small><?= htmlspecialchars($e['usuario_nome']) ?></small></td>
+                                <td>
+                                    <a href="recibo_entrega.php?id=<?= $e['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" title="Imprimir Termo de Recebimento">
+                                        🖨️ Recibo
+                                    </a>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>

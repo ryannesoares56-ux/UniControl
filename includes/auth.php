@@ -61,3 +61,24 @@ function current_user(): array {
         'empresa_nome' => $_SESSION['empresa_nome'] ?? 'Empresa'
     ];
 }
+
+/**
+ * Permite que um administrador alterne a empresa ativa que está gerenciando
+ */
+function switch_empresa(int $novaEmpresaId): bool {
+    if (!is_admin()) {
+        return false;
+    }
+    require_once __DIR__ . '/../config/database.php';
+    $pdo = getDBConnection();
+    $stmt = $pdo->prepare('SELECT id, nome FROM empresas WHERE id = :id AND status = "ativo"');
+    $stmt->execute([':id' => $novaEmpresaId]);
+    $emp = $stmt->fetch();
+    if ($emp) {
+        $_SESSION['empresa_id']   = (int)$emp['id'];
+        $_SESSION['empresa_nome'] = $emp['nome'];
+        return true;
+    }
+    return false;
+}
+
