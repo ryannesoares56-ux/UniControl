@@ -96,10 +96,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
     </form>
 
+    <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.92rem;">
+        Novo no UniControl? 
+        <a href="cadastro.php" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+            Criar uma conta agora ➔
+        </a>
+    </div>
+
     <div class="demo-credentials-box">
         <strong>Credenciais Padrão para Avaliação:</strong>
         <div>• <b>Admin:</b> admin@unicontrol.com | <code>admin123</code></div>
         <div>• <b>Operador:</b> operador@unicontrol.com | <code>operador123</code></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 14px; font-size: 0.85rem;">
+        <a href="index.php" style="color: var(--text-muted); text-decoration: none;">
+            ⬅ Voltar à página inicial
+        </a>
     </div>
 </div>
 

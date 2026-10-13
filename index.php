@@ -46,11 +46,7 @@ $userNivel  = $_SESSION['usuario_nivel'] ?? '';
             <a href="dashboard.php" class="lp-btn lp-btn-primary">Ir para o Painel</a>
         <?php else: ?>
             <a href="login.php" class="lp-btn lp-btn-secondary">Entrar</a>
-            <form method="POST" action="login.php" style="display:inline; margin:0;">
-                <input type="hidden" name="email" value="admin@unicontrol.com">
-                <input type="hidden" name="senha" value="admin123">
-                <button type="submit" class="lp-btn lp-btn-primary">⚡ Teste Rápido</button>
-            </form>
+            <a href="cadastro.php" class="lp-btn lp-btn-primary">Criar Conta</a>
         <?php endif; ?>
     </div>
 </nav>
@@ -71,15 +67,19 @@ $userNivel  = $_SESSION['usuario_nivel'] ?? '';
 
     <!-- Acesso Dinâmico para Demonstração -->
     <div class="lp-hero-actions">
-        <a href="login.php" class="lp-btn lp-btn-primary" style="padding: 14px 28px; font-size: 1.05rem;">
-            🚀 Acessar o Sistema
+        <a href="cadastro.php" class="lp-btn lp-btn-primary" style="padding: 14px 28px; font-size: 1.05rem; background: linear-gradient(135deg, #10b981, #059669);">
+            ✨ Criar Conta Grátis
+        </a>
+
+        <a href="login.php" class="lp-btn lp-btn-secondary" style="padding: 14px 24px; font-size: 1.05rem;">
+            🔑 Fazer Login
         </a>
 
         <form method="POST" action="login.php" style="display:inline; margin:0;">
             <input type="hidden" name="email" value="admin@unicontrol.com">
             <input type="hidden" name="senha" value="admin123">
             <button type="submit" class="lp-btn lp-btn-demo" style="padding: 14px 24px; font-size: 1.05rem;">
-                ⚡ Entrar como Administrador
+                ⚡ Entrar como Admin (Demo)
             </button>
         </form>
 
@@ -87,7 +87,7 @@ $userNivel  = $_SESSION['usuario_nivel'] ?? '';
             <input type="hidden" name="email" value="operador@unicontrol.com">
             <input type="hidden" name="senha" value="operador123">
             <button type="submit" class="lp-btn lp-btn-secondary" style="padding: 14px 24px; font-size: 1.05rem;">
-                👤 Entrar como Operador
+                👤 Operador (Demo)
             </button>
         </form>
     </div>
