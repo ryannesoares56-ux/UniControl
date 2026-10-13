@@ -83,6 +83,11 @@ if (is_admin()) {
                 👤 Usuários do Sistema
             </a>
             <?php endif; ?>
+
+            <div class="nav-section-title">Apresentação</div>
+            <a href="index.php" class="nav-link" target="_blank">
+                🌐 Vitrine do Produto
+            </a>
         </nav>
 
         <div class="sidebar-footer">
