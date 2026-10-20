@@ -5,6 +5,26 @@
  * garantindo que o sistema funcione imediatamente em qualquer ambiente de apresentação.
  */
 
+// Carrega variáveis do arquivo .env se existir na raiz do projeto
+$envFilePath = __DIR__ . '/../.env';
+if (file_exists($envFilePath)) {
+    $envLines = file($envFilePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (str_contains($line, '=')) {
+            [$envKey, $envVal] = explode('=', $line, 2);
+            $envKey = trim($envKey);
+            $envVal = trim($envVal, " \t\n\r\0\x0B\"'");
+            putenv("{$envKey}={$envVal}");
+            $_ENV[$envKey] = $envVal;
+            $_SERVER[$envKey] = $envVal;
+        }
+    }
+}
+
 if (!defined('DB_DRIVER')) {
     define('DB_DRIVER', getenv('DB_DRIVER') ?: 'mysql');
 }
